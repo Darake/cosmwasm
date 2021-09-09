@@ -41,11 +41,11 @@ pub fn make_compile_time_store(
     #[cfg(feature = "cranelift")]
     {
         let mut config = Cranelift::default();
-        config.push_middleware(deterministic);
-        config.push_middleware(metering);
         for middleware in middlewares {
             config.push_middleware(middleware.clone());
         }
+        config.push_middleware(deterministic);
+        config.push_middleware(metering);
         let engine = Universal::new(config).engine();
         make_store_with_engine(&engine, memory_limit)
     }
@@ -53,11 +53,11 @@ pub fn make_compile_time_store(
     #[cfg(not(feature = "cranelift"))]
     {
         let mut config = Singlepass::default();
-        config.push_middleware(deterministic);
-        config.push_middleware(metering);
         for middleware in middlewares {
             config.push_middleware(middleware.clone());
         }
+        config.push_middleware(deterministic);
+        config.push_middleware(metering);
         let engine = Universal::new(config).engine();
         make_store_with_engine(&engine, memory_limit)
     }
