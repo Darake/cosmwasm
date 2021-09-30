@@ -40,8 +40,8 @@ impl<'d> Module<'d> {
     ) -> InstrumentedInstance<Env>
     where
         Env: WasmerEnv + 'static,
-        F1: HostFunction<(u32, u32), (), WithEnv, Env>,
-        F2: HostFunction<(u32, u32, u64), (), WithEnv, Env>,
+        F1: HostFunction<(), (u32), WithEnv, Env>,
+        F2: HostFunction<(u32, u64), (), WithEnv, Env>,
     {
         let profiling = Arc::new(Profiling::new(block_store));
 
@@ -119,8 +119,8 @@ impl<Env: WasmerEnv> InstrumentedInstance<Env> {
 fn add_imports(module: &mut walrus::Module) -> (usize, usize) {
     use walrus::ValType::*;
 
-    let start_type = module.types.add(&[I32, I32], &[]);
-    let take_type = module.types.add(&[I32, I32, I64], &[]);
+    let start_type = module.types.add(&[], &[I32]);
+    let take_type = module.types.add(&[I32, I64], &[]);
 
     let (fn1, _) = module.add_import_func("profiling", "start_measurement", start_type);
     let (fn2, _) = module.add_import_func("profiling", "take_measurement", take_type);
@@ -320,14 +320,14 @@ mod tests {
 
     #[derive(Debug, Clone, WasmerEnv)]
     struct FixtureEnv {
-        start_calls: Arc<Mutex<Vec<(u32, u32)>>>,
-        end_calls: Arc<Mutex<Vec<(u32, u32, u64)>>>,
+        execution: Arc<Mutex<u32>>,
+        end_calls: Arc<Mutex<Vec<(u32, u64)>>>,
     }
 
     impl FixtureEnv {
         fn new() -> Self {
             Self {
-                start_calls: Arc::new(Mutex::new(Vec::new())),
+                execution: Arc::new(Mutex::new(0)),
                 end_calls: Arc::new(Mutex::new(Vec::new())),
             }
         }
@@ -339,11 +339,14 @@ mod tests {
             let module = Module::from_bytes(&wasm);
 
             let env = FixtureEnv::new();
-            let start_measurement_fn = |env: &FixtureEnv, fun: u32, block: u32| {
-                env.start_calls.lock().unwrap().push((fun, block));
+            let start_measurement_fn = |env: &FixtureEnv| -> u32 {
+                let mut execution = env.execution.lock().unwrap();
+                let cur_execution = *execution;
+                *execution += 1;
+                cur_execution
             };
-            let take_measurement_fn = |env: &FixtureEnv, fun: u32, block: u32, hash: u64| {
-                env.end_calls.lock().unwrap().push((fun, block, hash));
+            let take_measurement_fn = |env: &FixtureEnv, execution: u32, hash: u64| {
+                env.end_calls.lock().unwrap().push((execution, hash));
             };
 
             let block_store = Arc::new(Mutex::new(BlockStore::new()));

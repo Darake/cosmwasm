@@ -5,7 +5,7 @@ use loupe::MemoryUsage;
 
 use crate::operators::OperatorSymbol;
 
-#[derive(Debug, Hash, PartialEq, Eq, MemoryUsage, Copy, Clone)]
+#[derive(wasmer::WasmerEnv, Debug, Hash, PartialEq, Eq, MemoryUsage, Copy, Clone)]
 pub struct BlockId(pub u64);
 
 impl BlockId {

@@ -206,6 +206,7 @@ dependencies = [
  "cosmwasm-vm",
  "csv",
  "hackatom",
+ "itertools 0.10.1",
  "loupe",
  "walrus",
  "wasmer",

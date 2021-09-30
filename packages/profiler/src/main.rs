@@ -23,21 +23,12 @@ type Env = Arc<Mutex<Measurements>>;
 type MockInstance = Instance<MockApi, MockStorage, MockQuerier>;
 
 fn main() {
-    fn start_measurement(env: &Env, fn_index: u32, local_block_id: u32) {
-        env.lock()
-            .unwrap()
-            .start_measurement(fn_index, local_block_id);
+    fn start_measurement(env: &Env) -> u32 {
+        env.lock().unwrap().start_measurement()
     }
 
-    fn take_measurement(
-        env: &Env,
-        fn_index: u32,
-        local_block_id: u32,
-        block_id: impl Into<BlockId>,
-    ) {
-        env.lock()
-            .unwrap()
-            .take_measurement(fn_index, local_block_id, block_id);
+    fn take_measurement(env: &Env, execution: u32, block_id: impl Into<BlockId>) {
+        env.lock().unwrap().take_measurement(execution, block_id);
     }
 
     let measurements = Arc::new(Mutex::new(Measurements::new()));
@@ -66,8 +57,10 @@ fn main() {
         call_things(instance.vm_instance());
     }
 
-    let measurements = measurements.lock().unwrap();
-    measurements.compile_csv(block_store, std::io::stdout());
+    let mut measurements = measurements.lock().unwrap();
+    measurements
+        .compile_results()
+        .compile_csv(block_store, std::io::stdout());
 }
 
 // Pretty much stolen from `/contracts/hackatom/tests/integration.rs`
